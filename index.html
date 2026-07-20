@@ -225,6 +225,61 @@
             font-weight: bold;
             color: white;
         }
+
+        /* ====================================================
+           ADAPTACIÓN RESPONSIVE (MÓVILES Y TABLETS PEQUEÑAS)
+           ==================================================== */
+        @media (max-width: 900px) {
+            body {
+                overflow-y: auto; /* Permite hacer scroll vertical */
+                overflow-x: hidden;
+            }
+
+            #canvas-container {
+                position: fixed; /* Mantiene el auto 3D pegado al fondo al hacer scroll */
+                z-index: 0;
+            }
+
+            .navbar {
+                position: fixed;
+                flex-direction: column;
+                height: auto;
+                padding: 15px 5%;
+                gap: 12px;
+            }
+
+            .navbar .logo {
+                font-size: 1.5rem;
+            }
+
+            .navbar .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            /* Reseteamos el posicionamiento absoluto para apilar los paneles */
+            .glass-panel {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                bottom: auto;
+                transform: none;
+                width: 92%;
+                margin: 0 auto 20px auto;
+                z-index: 2;
+            }
+
+            /* Desplaza el primer panel hacia abajo para dejar ver el auto 3D */
+            .stats-container {
+                margin-top: 55vh; 
+            }
+
+            .track-container {
+                margin-bottom: 40px; /* Margen final para que no quede pegado al borde */
+            }
+        }
     </style>
 </head>
 <body>
@@ -297,10 +352,6 @@
             </div>
         </div>
     </div>
-
-
-
-    
 
     <!-- PANEL DE PISTA (Derecha Abajo) -->
     <div class="glass-panel track-container">
