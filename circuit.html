@@ -1,0 +1,494 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Circuit de la Sarthe - Le Mans 24H Historia</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,900&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; font-family:'Montserrat',sans-serif; overflow:hidden; color:white; overscroll-behavior: none; }
+#canvas-container { width:100vw; height:100vh; position:absolute; top:0; left:0; z-index:1; }
+
+/* ---- REUSABLE GLASS PANEL ---- */
+.glass-panel {
+    background: rgba(4,5,10,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+/* ---- LOADING ---- */
+#loading{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity 1s;}
+#loading h1{font-size:2.2rem;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:4px;margin-bottom:8px;text-align:center;}
+#loading h1 span{color:#e32636;}
+#loading-sub{color:#666;font-size:0.75rem;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px;text-align:center;}
+#loading-bytes{color:#e32636;font-size:0.9rem;font-weight:700;margin-bottom:22px;min-height:22px;}
+.prog-bg{width:350px;max-width:80vw;height:3px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;}
+@keyframes slide{0%{left:-40%;width:40%}100%{left:100%;width:40%}}
+.prog-fill{height:100%;background:#e32636;border-radius:3px;width:0%;position:relative;transition:width .3s;}
+.prog-fill.indeterminate{animation:slide 1.3s infinite ease-in-out;}
+
+/* ---- NAVBAR ---- */
+.navbar{position:absolute;top:0;left:0;width:100%;height:68px;background:rgba(4,5,10,0.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(227,38,54,0.25);display:flex;align-items:center;justify-content:space-between;padding:0 5%;z-index:30;}
+.logo{font-size:1.5rem;font-weight:900;font-style:italic;letter-spacing:2px;}
+.logo span{color:#e32636;}
+.back-btn{color:#888;text-decoration:none;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;transition:color .3s;border:1px solid rgba(255,255,255,0.1);padding:8px 16px;border-radius:6px;}
+.back-btn:hover{color:#e32636;border-color:#e32636;}
+
+/* ---- LEFT SIDEBAR ---- */
+.sidebar-left {
+    position: absolute; top: 85px; left: 25px; width: 320px;
+    display: flex; flex-direction: column; gap: 15px; z-index: 20;
+    pointer-events: none;
+}
+.sidebar-left > * { pointer-events: auto; }
+
+/* Title Panel */
+.title-panel { padding: 20px; border-left: 3px solid #e32636; }
+.title-panel h2 { font-size: 1.8rem; font-weight: 900; font-style: italic; text-transform: uppercase; line-height: 1.1; margin-bottom: 6px; }
+.title-panel h2 span { color: #e32636; }
+.title-panel p { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
+
+/* Legend Panel */
+.legend-panel { padding: 18px; }
+.legend-panel strong { display: block; margin-bottom: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+.legend-item { margin-bottom: 8px; font-size: 0.7rem; color: #aaa; display: flex; align-items: center; }
+.legend-item:last-child { margin-bottom: 0; }
+.leg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; }
+
+/* Action Buttons */
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { flex: 1; background: rgba(4,5,10,0.88); border: 1px solid rgba(255,255,255,0.12); color: #ccc; padding: 10px 12px; border-radius: 8px; font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .2s; text-align: center; }
+.btn:hover, .btn.active { background: #e32636; border-color: #e32636; color: white; box-shadow: 0 4px 15px rgba(227,38,54,0.4); }
+
+/* ---- RIGHT SIDEBAR (HISTORY DETAILS) ---- */
+.sidebar-right {
+    position: absolute; top: 85px; right: 25px; width: 360px; z-index: 20;
+    padding: 30px 24px; display: flex; flex-direction: column;
+    transform: translateX(120%); opacity: 0; pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sidebar-right.active {
+    transform: translateX(0); opacity: 1; pointer-events: auto;
+}
+
+#close-panel { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
+#close-panel:hover { background: #e32636; }
+
+#sector-panel .s-deco { width: 40px; height: 4px; border-radius: 2px; margin-bottom: 15px; background: #fff; }
+#sector-panel h3 { font-size: 1.3rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; padding-right: 20px; }
+#sector-panel .s-sub { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+#s-history { font-size: 0.85rem; line-height: 1.7; color: #ccc; }
+#s-history p { margin-bottom: 12px; }
+
+/* ---- CSS2D LABELS ---- */
+.label3d {
+    background: rgba(4,5,10,0.92); border: 1px solid rgba(227,38,54,0.6); border-radius: 8px;
+    padding: 7px 12px; font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: white;
+    cursor: pointer; pointer-events: auto; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 15px rgba(227,38,54,0.3);
+    transition: transform .2s, box-shadow .2s; user-select: none;
+}
+.label3d:hover { transform: scale(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.9), 0 0 25px rgba(227,38,54,0.6); z-index: 100; }
+.label3d .l-num { font-size: 1rem; margin-right: 6px; }
+
+/* Custom Marker Colors */
+.label3d.start { border-color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,0.3); } .label3d.start .l-num { color: #00ff88; }
+.label3d.curve { border-color: #ffaa00; box-shadow: 0 0 15px rgba(255,170,0,0.3); } .label3d.curve .l-num { color: #ffaa00; }
+.label3d.straight { border-color: #00aaff; box-shadow: 0 0 15px rgba(0,170,255,0.3); } .label3d.straight .l-num { color: #00aaff; }
+.label3d.danger { border-color: #ff3366; box-shadow: 0 0 15px rgba(255,51,102,0.3); } .label3d.danger .l-num { color: #ff3366; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+    .navbar { height: 60px; padding: 0 15px; }
+    .logo { font-size: 1.2rem; }
+    .back-btn { font-size: 0.65rem; padding: 6px 10px; }
+
+    .sidebar-left { top: 70px; left: 0; width: 100%; padding: 0 15px; gap: 10px; }
+    .title-panel { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-left: none; border-top: 3px solid #e32636; }
+    .title-panel h2 { font-size: 1.2rem; margin-bottom: 0; }
+    .title-panel p { display: none; }
+    .legend-panel { display: none; }
+    
+    .sidebar-right { 
+        top: auto; bottom: 0; right: 0; left: 0; width: 100%; 
+        border-radius: 20px 20px 0 0; padding: 25px 20px 30px 20px;
+        transform: translateY(100%); border-bottom: none;
+        max-height: 50vh; overflow-y: auto;
+    }
+    .sidebar-right.active { transform: translateY(0); }
+    .label3d { font-size: 0.65rem; padding: 5px 10px; }
+    .label3d .l-num { font-size: 0.85rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+    <h1>Circuit de la <span>Sarthe</span></h1>
+    <div id="loading-sub">Le Mans 24 Hours &mdash; Cargando modelo 3D</div>
+    <div id="loading-bytes">Iniciando...</div>
+    <div class="prog-bg"><div class="prog-fill indeterminate" id="prog"></div></div>
+</div>
+
+<nav class="navbar">
+    <div class="logo">Le Mans <span>24H</span></div>
+    <a href="index.html" class="back-btn">&#8592; Volver</a>
+</nav>
+
+<!-- Left Sidebar (Always Visible) -->
+<div class="sidebar-left">
+    <div class="title-panel glass-panel">
+        <h2>Circuit de la<br><span>Sarthe</span></h2>
+        <p>Recorrido Histórico</p>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn active" id="btn-rotate">▶ Auto-Rotar</button>
+        <button class="btn" id="btn-reset">↺ Resetear</button>
+        <button class="btn" id="btn-top">▲ Centrar</button>
+    </div>
+
+    <div class="legend-panel glass-panel">
+        <strong>Leyenda Histórica</strong>
+        <div class="legend-item"><span class="leg-dot" style="background:#00ff88; box-shadow: 0 0 8px #00ff88"></span>Meta y Boxes</div>
+        <div class="legend-item"><span class="leg-dot" style="background:#00aaff; box-shadow: 0 0 8px #00aaff"></span>Rectas de Velocidad Pura</div>
+        <div class="legend-item"><span class="leg-dot" style="background:#ffaa00; box-shadow: 0 0 8px #ffaa00"></span>Sectores Legendarios</div>
+        <div class="legend-item"><span class="leg-dot" style="background:#ff3366; box-shadow: 0 0 8px #ff3366"></span>Zonas Críticas / Accidentes</div>
+    </div>
+</div>
+
+<!-- Right Sidebar (Dynamic History Info) -->
+<div id="sector-panel" class="sidebar-right glass-panel">
+    <button id="close-panel">✕</button>
+    <div class="s-deco" id="s-deco"></div>
+    <h3 id="s-title">Característica</h3>
+    <div class="s-sub" id="s-sub">Subtítulo</div>
+    <div id="s-history">
+        <!-- Text injected by JS -->
+    </div>
+</div>
+
+<div id="canvas-container"></div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// Global variables for raycaster
+let trackBoxSize = new THREE.Vector3();
+let trackCenter = new THREE.Vector3();
+
+// ---- SCENE ----
+const scene = new THREE.Scene();
+
+const starGeo = new THREE.BufferGeometry();
+const starCount = 2000;
+const starPos = new Float32Array(starCount * 3);
+for(let i=0;i<starCount*3;i++) starPos[i]=(Math.random()-0.5)*80000;
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color:0xffffff,size:12,sizeAttenuation:true}));
+scene.add(stars);
+
+const skyGeo = new THREE.SphereGeometry(40000,16,8);
+const skyMat = new THREE.MeshBasicMaterial({ color:0x040612, side:THREE.BackSide });
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+const W = window.innerWidth, H = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 200000);
+const container = document.getElementById('canvas-container');
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+const css2d = new CSS2DRenderer();
+css2d.setSize(W,H);
+css2d.domElement.style.position='absolute';
+css2d.domElement.style.top='0';
+css2d.domElement.style.pointerEvents='none';
+css2d.domElement.style.zIndex='15';
+container.appendChild(css2d.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,2.8));
+const sun = new THREE.DirectionalLight(0xfff0cc,3.5);
+sun.position.set(1,2,1);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xaabbff,2.0);
+fill.position.set(-1,1,-1);
+scene.add(fill);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.screenSpacePanning = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+
+let defaultPos = new THREE.Vector3();
+let defaultTarget = new THREE.Vector3();
+
+// ---- HISTORICAL POI DATA ----
+// Si la meta todavía no encaja, presiona ALT + CLICK izquierdo en la pista para ver las coordenadas correctas en la consola
+const trackFeatures = [
+    {
+        label: 'Meta', icon: '🏁', className: 'start', color: '#00ff88',
+        relPos: {rx: 0.15, rz: -0.20}, // <-- CAMBIÉ ESTAS COORDENADAS POR DEFECTO PARA VER SI ATINA MEJOR
+        title: 'Ligne de Départ / Arrivée', sub: 'La Recta Principal',
+        history: '<p>Históricamente, aquí se realizaba la famosa salida estilo Le Mans, donde los pilotos cruzaban la pista corriendo hacia sus autos, encendían el motor y arrancaban. Este formato fue abolido en 1970 tras las protestas de pilotos como Jacky Ickx por razones de seguridad.</p><p>Hoy en día, la inmensa tribuna principal se estremece con la salida lanzada el sábado a las 16:00 (hora local).</p>'
+    },
+    {
+        label: 'Dunlop', icon: '⛩️', className: 'curve', color: '#ffaa00',
+        relPos: {rx: 0.15, rz: -0.48},
+        title: 'Courbe et Chicane Dunlop', sub: 'El puente más famoso del motor',
+        history: '<p>La curva Dunlop es inmediatamente reconocible gracias al enorme puente de neumáticos amarillo construido originalmente en 1932. En 1987, debido al peligroso aumento de las velocidades, se introdujo la chicana justo antes del puente para obligar a los autos a frenar fuertemente y no tomar el cambio de rasante a toda velocidad.</p>'
+    },
+    {
+        label: 'Tertre Rouge', icon: '🌲', className: 'curve', color: '#ffaa00',
+        relPos: {rx: -0.2, rz: -0.45},
+        title: 'Virage du Tertre Rouge', sub: 'La entrada al infierno',
+        history: '<p>Bautizada por un antiguo montículo de "tierra roja" que existía en el lugar. Es una de las curvas más críticas de la vuelta. Si un piloto comete un error a la salida de Tertre Rouge, perderá valiosos kilómetros por hora que lo arrastrarán en desventaja a lo largo de toda la inmensa recta de Mulsanne.</p>'
+    },
+    {
+        label: 'Hunaudières', icon: '🚀', className: 'straight', color: '#00aaff',
+        relPos: {rx: -0.48, rz: -0.2},
+        title: 'Ligne Droite des Hunaudières', sub: 'Mulsanne Straight',
+        history: '<p>Una recta de locura. Originalmente era un tramo ininterrumpido de 6 kilómetros donde los autos volaban. El clímax llegó en 1988 cuando el equipo WM-Peugeot sacrificó su motor solo para romper el récord: registraron unos alucinantes <b>405 km/h</b> antes de retirarse. Por seguridad, en 1990 la FIA obligó a instalar dos chicanas para que ningún auto excediera los 350 km/h.</p>'
+    },
+    {
+        label: 'Mulsanne', icon: '🛑', className: 'danger', color: '#ff3366',
+        relPos: {rx: -0.48, rz: 0.3},
+        title: 'Virage de Mulsanne', sub: 'Frenos al rojo vivo',
+        history: '<p>Al final de la larguísima recta, los pilotos enfrentan una violenta zona de frenado para tomar un ángulo recto a la derecha. Durante la noche, los discos de carbono y cerámica brillan al rojo vivo bajo los pasos de rueda. Pasar de largo aquí significa acabar enterrado en la trampa de grava y perder cualquier opción de victoria.</p>'
+    },
+    {
+        label: 'Indianapolis & Arnage', icon: '⚠️', className: 'danger', color: '#ff3366',
+        relPos: {rx: -0.2, rz: 0.48},
+        title: 'Virages d\'Indianapolis et Arnage', sub: 'Técnica en baja velocidad',
+        history: '<p>Indianapolis recibe su nombre por el peralte y su pavimento original que recordaba a la famosa pista de ladrillos en EE.UU. Inmediatamente después llega Arnage, que es <b>la curva más lenta</b> de todo el trazado. Aquí los Hypercars se ven obligados a bajar hasta la primera marcha, sufriendo con el tráfico y el poco agarre aerodinámico a unos 70 km/h.</p>'
+    },
+    {
+        label: 'Porsche', icon: '🏎️', className: 'curve', color: '#ffaa00',
+        relPos: {rx: 0.2, rz: 0.45},
+        title: 'Virages Porsche', sub: 'El desafío aerodinámico',
+        history: '<p>Fueron diseñadas y añadidas en 1990 para eludir la tristemente célebre zona de Maison Blanche (donde ocurrieron graves accidentes históricos). Las Curvas Porsche son una sinfonía hiper-rápida y fluida donde el auto se apoya brutalmente en su aerodinámica. Un mínimo error de cálculo envía al piloto directamente contra los muros de hormigón que no perdonan.</p>'
+    },
+    {
+        label: 'Chicanes Ford', icon: '🏁', className: 'danger', color: '#ff3366',
+        relPos: {rx: 0.35, rz: -0.3},
+        title: 'Chicanes Ford / Raccordement', sub: 'El último obstáculo',
+        history: '<p>Construidas a finales de los 60s antes de que llegara el Ford GT40 a conquistar Le Mans. Son dos chicanas seguidas muy lentas que conectan el circuito de las 24 Horas con el circuito corto permanente (Bugatti). Es la última zona de frenado donde se han visto adelantamientos desesperados en la última vuelta antes de cruzar la ansiada bandera a cuadros.</p>'
+    }
+];
+
+function createMarker(feature, center, boxSize){
+    const x = center.x + feature.relPos.rx * boxSize.x;
+    const y = center.y + boxSize.y * 0.5 + boxSize.y*0.08;
+    const z = center.z + feature.relPos.rz * boxSize.z;
+
+    const sphereGeo = new THREE.SphereGeometry(boxSize.y*0.04, 16, 16);
+    const sphereMat = new THREE.MeshStandardMaterial({
+        color: feature.color, emissive: feature.color, emissiveIntensity: 2.5,
+        metalness:0.2, roughness:0.1
+    });
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.position.set(x, y - boxSize.y*0.02, z);
+
+    const poleGeo = new THREE.CylinderGeometry(boxSize.y*0.003, boxSize.y*0.003, boxSize.y*0.15, 6);
+    const poleMat = new THREE.MeshBasicMaterial({color: feature.color, transparent:true, opacity:0.6});
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.set(x, y - boxSize.y*0.07, z);
+
+    const light = new THREE.PointLight(feature.color, 4, boxSize.y*0.8);
+    light.position.set(x, y, z);
+
+    const div = document.createElement('div');
+    div.className = 'label3d ' + feature.className;
+    div.innerHTML = '<span class="l-num">'+feature.icon+'</span>'+feature.label;
+    
+    div.addEventListener('click', (e) => {
+        showFeaturePanel(feature);
+        controls.autoRotate = false;
+        document.getElementById('btn-rotate').classList.remove('active');
+        document.getElementById('btn-rotate').textContent = '▶ Auto-Rotar';
+    });
+
+    const labelObj = new CSS2DObject(div);
+    labelObj.position.set(x, y + boxSize.y*0.07, z);
+
+    scene.add(sphere, pole, light, labelObj);
+}
+
+// ---- UI LOGIC ----
+const panel = document.getElementById('sector-panel');
+
+function showFeaturePanel(feature){
+    document.getElementById('s-deco').style.background = feature.color;
+    document.getElementById('s-deco').style.boxShadow = `0 0 10px ${feature.color}`;
+    document.getElementById('s-title').textContent = feature.title;
+    document.getElementById('s-title').style.color = 'white';
+    document.getElementById('s-sub').innerHTML = feature.sub;
+    document.getElementById('s-sub').style.color = feature.color;
+    
+    document.getElementById('s-history').innerHTML = feature.history;
+    
+    panel.classList.add('active');
+}
+
+document.getElementById('close-panel').addEventListener('click', () => {
+    panel.classList.remove('active');
+});
+
+// Close panel when clicking background canvas
+renderer.domElement.addEventListener('click', (e) => {
+    // Si presiona ALT + CLICK, saca la coordenada (No cerramos el panel)
+    if(e.altKey) return; 
+    panel.classList.remove('active');
+});
+
+// ---- BUTTONS ----
+const btnRotate = document.getElementById('btn-rotate');
+btnRotate.addEventListener('click', () => {
+    controls.autoRotate = !controls.autoRotate;
+    btnRotate.classList.toggle('active', controls.autoRotate);
+    btnRotate.textContent = controls.autoRotate ? '⏸ Pausar' : '▶ Auto-Rotar';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    camera.position.copy(defaultPos);
+    controls.target.copy(defaultTarget);
+    controls.update();
+});
+
+document.getElementById('btn-top').addEventListener('click', () => {
+    const d = defaultPos.length();
+    camera.position.set(0, d*1.2, 0.001);
+    controls.target.set(0,0,0);
+    controls.update();
+});
+
+
+// =========================================================================
+// 🚀 HERRAMIENTA OCULTA: BUSCADOR DE COORDENADAS CON ALT + CLICK
+// Si mantienes presionada la tecla ALT en tu teclado y haces clic en la pista,
+// la consola del navegador te dirá los valores rx y rz exactos para poner en trackFeatures.
+// =========================================================================
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+    if (!event.altKey) return; // Solo funciona si tienes presionado ALT
+
+    // Convertir posición del mouse a coordenadas normalizadas
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(scene, true);
+
+    if (intersects.length > 0) {
+        const point = intersects[0].point;
+        
+        // Ingeniería inversa para calcular rx y rz según el centro y tamaño del modelo
+        const rx = (point.x - trackCenter.x) / trackBoxSize.x;
+        const rz = (point.z - trackCenter.z) / trackBoxSize.z;
+
+        console.log(`%c🎯 ¡Clic detectado en la pista!`, `color: #00ff88; font-weight: bold; font-size: 14px;`);
+        console.log(`Copia y pega estos valores en tu trackFeatures:`);
+        console.log(`relPos: { rx: ${rx.toFixed(3)}, rz: ${rz.toFixed(3)} }`);
+        alert(`Coordenadas calculadas y enviadas a la consola (F12).\nrx: ${rx.toFixed(3)} \nrz: ${rz.toFixed(3)}`);
+    }
+});
+
+
+// ---- LOAD GLTF ----
+const prog = document.getElementById('prog');
+const loadingBytes = document.getElementById('loading-bytes');
+const loadingEl = document.getElementById('loading');
+
+const loader = new GLTFLoader();
+loader.load(
+    'circuit_model/scene.gltf', 
+    function(gltf){
+        const track = gltf.scene;
+        track.traverse(c=>{
+            if(c.isMesh){
+                const mats = Array.isArray(c.material) ? c.material : [c.material];
+                mats.forEach(m=>{ m.side=THREE.DoubleSide; m.depthWrite=true; });
+            }
+        });
+        
+        const box = new THREE.Box3().setFromObject(track);
+        
+        // Guardamos centro y tamaño globales para la herramienta de ALT + CLICK
+        trackCenter = box.getCenter(new THREE.Vector3());
+        trackBoxSize = box.getSize(new THREE.Vector3());
+        
+        track.position.sub(trackCenter); 
+        const maxDim = Math.max(trackBoxSize.x, trackBoxSize.y, trackBoxSize.z);
+        const fov = camera.fov * (Math.PI/180);
+        
+        const isMobile = window.innerWidth <= 768;
+        const zoomMultiplier = isMobile ? 2.2 : 1.7;
+        let dist = Math.abs(maxDim / (2 * Math.tan(fov/2))) * zoomMultiplier;
+        
+        camera.near = dist / 2000;
+        camera.far = dist * 25;
+        camera.updateProjectionMatrix();
+        
+        camera.position.set(dist*0.4, dist*0.7, dist*0.9);
+        controls.target.set(0,0,0);
+        controls.maxDistance = dist*8;
+        controls.minDistance = maxDim*0.005;
+        controls.update();
+        
+        defaultPos.copy(camera.position);
+        stars.scale.set(maxDim/40, maxDim/40, maxDim/40);
+        
+        const centeredCenter = new THREE.Vector3(0,0,0);
+        trackFeatures.forEach(feature => createMarker(feature, centeredCenter, trackBoxSize));
+
+        scene.add(track);
+        prog.style.width='100%';
+        prog.classList.remove('indeterminate');
+        loadingBytes.textContent='Modelo cargado correctamente!';
+        setTimeout(() => { loadingEl.style.opacity='0'; setTimeout(()=>loadingEl.style.display='none', 900); }, 600);
+    },
+    function(xhr){
+        const mb = (xhr.loaded/1048576).toFixed(1);
+        loadingBytes.textContent = mb + ' MB cargados...';
+        if(xhr.total>0){ prog.style.width=(xhr.loaded/xhr.total*100)+'%'; prog.classList.remove('indeterminate'); }
+    },
+    err => { console.error(err); loadingBytes.textContent='Error al cargar modelo.'; }
+);
+
+// ---- ANIMATE ----
+function animate(){
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene,camera);
+    css2d.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    css2d.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

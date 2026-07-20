@@ -1,0 +1,11 @@
+Model Information:
+* title:	Circuit de la Sarthe Le Mans 1989 layout
+* source:	https://sketchfab.com/3d-models/circuit-de-la-sarthe-le-mans-1989-layout-2c30f18c490d4223b48e7f52fbaec26b
+* author:	Dave Love SketchFab (https://sketchfab.com/Tyler_Dave)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Circuit de la Sarthe Le Mans 1989 layout" (https://sketchfab.com/3d-models/circuit-de-la-sarthe-le-mans-1989-layout-2c30f18c490d4223b48e7f52fbaec26b) by Dave Love SketchFab (https://sketchfab.com/Tyler_Dave) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
