@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>24H Le Mans - AMG GT3 Pitwall</title>
+    <title>EnduranceLab</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,900&display=swap');
 
@@ -244,94 +244,116 @@
             font-size: 1.1rem;
         }
 
-        /* ========================================================= */
-        /* MEDIA QUERIES - RESPONSIVE (Móviles y Tablets Pequeñas)   */
-        /* ========================================================= */
+ 
         @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                justify-content: center;
-                height: auto;
-                padding: 15px;
-            }
+    .navbar {
+        flex-direction: column;
+        justify-content: center;
+        height: auto;
+        padding: 15px;
+    }
 
-            .navbar .logo {
-                font-size: 1.3rem;
-                text-align: center;
-            }
+    .navbar .logo {
+        font-size: 1.3rem;
+        text-align: center;
+    }
 
-            .navbar .nav-links {
-                margin-top: 10px;
-                gap: 15px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
+    .navbar .nav-links {
+        margin-top: 10px;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-            .navbar .nav-links a {
-                font-size: 0.75rem;
-            }
+    .navbar .nav-links a {
+        font-size: 0.75rem;
+    }
 
-            /* Convertir contenedor de paneles en un carrusel horizontal inferior */
-            .ui-panels-container {
-                top: auto;
-                bottom: 0;
-                height: 45vh;
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding: 0 20px;
-                gap: 20px;
-                pointer-events: auto;
-                background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, transparent);
-                scroll-snap-type: x mandatory;
-            }
+    /* CONTENEDOR CONTENEDOR EN MODO SCROLL HORIZONTAL */
+    .ui-panels-container {
+        position: fixed; /* Asegura que quede fijo sobre el lienzo/3D */
+        left: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 50vh; /* Ajusta la altura si lo ves muy alto o bajito */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        
+        /* Habilitar el scroll horizontal fluido */
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch; /* Scroll suave en iOS/Safari */
+        
+        /* Configuración del Snap (Efecto imán al deslizar) */
+        scroll-snap-type: x mandatory;
+        
+        padding: 15px 20px;
+        gap: 15px;
+        pointer-events: auto;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, transparent);
+        z-index: 100;
+    }
 
-            .ui-panels-container::-webkit-scrollbar {
-                display: none;
-            }
+    /* Ocultar la barra de scroll nativa para apariencia limpia */
+    .ui-panels-container::-webkit-scrollbar {
+        display: none;
+    }
+    .ui-panels-container {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
 
-            .glass-panel {
-                position: relative;
-                top: auto !important;
-                right: auto !important;
-                bottom: auto !important;
-                left: auto !important;
-                min-width: 85vw; 
-                height: 90%;
-                overflow-y: auto;
-                scroll-snap-align: center;
-                padding: 20px;
-                margin-bottom: 0;
-            }
+    /* CADA CUADRO / PANEL DENTRO DEL SCROLL */
+    .glass-panel {
+        position: relative;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: auto !important;
+        
+        /* Dimensiones fijas para forzar que sobresalgan y activen el scroll */
+        flex: 0 0 85vw; /* Fuerza a ocupar el 85% del ancho de la pantalla */
+        width: 85vw;
+        max-height: 100%;
+        
+        /* Scroll interno si la info de la tarjeta es muy larga */
+        overflow-y: auto;
+        
+        /* Alineación magnética al deslizar */
+        scroll-snap-align: center;
+        
+        padding: 20px;
+        margin: 0;
+        box-sizing: border-box;
+    }
 
-            .telemetry-label {
-                padding: 6px 10px;
-                font-size: 0.7rem;
-            }
+    .telemetry-label {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
 
-            .telemetry-label .label-value {
-                font-size: 0.95rem;
-            }
-            
-            .telemetry-label::after {
-                height: 20px;
-                bottom: -20px;
-            }
-        }
+    .telemetry-label .label-value {
+        font-size: 0.95rem;
+    }
+    
+    .telemetry-label::after {
+        height: 20px;
+        bottom: -20px;
+    }
+}
     </style>
 </head>
 <body>
 
     <!-- NAVBAR -->
     <nav class="navbar">
-        <div class="logo">Mercedes <span>AMG Team Iron Lynx</span></div>
+        <div class="logo">Endurance<span>Lab</span></div>
         <div class="nav-links">
             <a href="#" class="active">Race Control</a>
             <a href="#">Telemetría</a>
             <a href="#">Pilotos</a>
-            <a href="#">Circuito</a>
+            <a href="/AMG/circuit.html">Circuito</a>
         </div>
     </nav>
 
@@ -405,7 +427,7 @@
                 <div>Récord Vuelta: <span>3:14.791</span></div>
             </div>
             <a href="circuit.html" target="_blank" style="display: block; text-align: center; background: linear-gradient(135deg, #e32636, #a01020); color: white; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(227,38,54,0.4);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(227,38,54,0.6)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(227,38,54,0.4)'">
-                🏎️ Ver Pista 3D Interactiva
+                 Ver Pista 3D Interactiva
             </a>
         </div>
 
@@ -487,8 +509,6 @@
                 console.error('Error cargando el modelo:', error);
             }
         );
-
-        // ---- Mini escena 3D del Casco Red Bull ----
         const helmetContainer = document.getElementById('helmet-canvas');
         if (helmetContainer) {
             const hScene = new THREE.Scene();
